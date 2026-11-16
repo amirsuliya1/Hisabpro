@@ -1,0 +1,6 @@
+{
+  "name": "HisabPulse",
+  "description": "Offline-first native Android business management, GST billing, inventory, POS, and double-entry accounting application.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

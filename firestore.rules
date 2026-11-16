@@ -1,0 +1,427 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string &&
+             id.size() >= 1 &&
+             id.size() <= 128 &&
+             id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidOptionalString(data, key, maxLen) {
+      return !(key in data) || (data[key] is string && data[key].size() <= maxLen);
+    }
+
+    function isValidOptionalInt(data, key, minVal, maxVal) {
+      return !(key in data) || data[key] == null || (data[key] is int && data[key] >= minVal && data[key] <= maxVal);
+    }
+
+    function isValidUserProfile(data) {
+      return data.userId is string && data.userId.size() <= 128 &&
+             data.email is string && data.email.size() <= 128 &&
+             data.shopName is string && data.shopName.size() <= 100 &&
+             data.address is string && data.address.size() <= 300 &&
+             data.phone is string && data.phone.size() <= 20 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             (!('updatedAt' in data) || data.updatedAt == null || (data.updatedAt is timestamp && data.updatedAt <= request.time));
+    }
+
+    function isValidSyncedBusiness(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.localId is int && data.localId >= 1 && data.localId <= 100000000 &&
+             data.businessName is string && data.businessName.size() >= 1 && data.businessName.size() <= 120 &&
+             data.category is string &&
+             data.category in [
+               'RETAIL', 'WHOLESALE', 'SUPERMARKET', 'MEDICAL', 'CLOTHING',
+               'ELECTRONICS', 'HARDWARE', 'RESTAURANT', 'DISTRIBUTOR',
+               'MANUFACTURER', 'SERVICE', 'GENERAL_TRADING'
+             ] &&
+             data.isGstRegistered is bool &&
+             data.currencySymbol is string && data.currencySymbol.size() >= 1 && data.currencySymbol.size() <= 8 &&
+             data.invoicePrefix is string && data.invoicePrefix.size() <= 16 &&
+             data.nextInvoiceNumber is int && data.nextInvoiceNumber >= 1 && data.nextInvoiceNumber <= 1000000000 &&
+             data.localUpdatedAt is int && data.localUpdatedAt >= 0 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time &&
+             isValidOptionalString(data, 'ownerName', 100) &&
+             isValidOptionalString(data, 'tagline', 160) &&
+             isValidOptionalString(data, 'phone', 32) &&
+             isValidOptionalString(data, 'email', 128) &&
+             isValidOptionalString(data, 'website', 160) &&
+             isValidOptionalString(data, 'address', 300) &&
+             isValidOptionalString(data, 'city', 80) &&
+             isValidOptionalString(data, 'state', 80) &&
+             isValidOptionalString(data, 'pinCode', 16) &&
+             isValidOptionalString(data, 'gstin', 24) &&
+             isValidOptionalString(data, 'financialYear', 24) &&
+             isValidOptionalString(data, 'upiId', 128) &&
+             isValidOptionalString(data, 'signatureLabel', 80) &&
+             isValidOptionalString(data, 'defaultTerms', 500);
+    }
+
+    function isValidSyncedProduct(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.localId is int && data.localId >= 1 && data.localId <= 100000000 &&
+             data.businessId is int && data.businessId >= 1 && data.businessId <= 100000000 &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 160 &&
+             data.purchasePricePaise is int && data.purchasePricePaise >= 0 && data.purchasePricePaise <= 100000000000 &&
+             data.sellingPricePaise is int && data.sellingPricePaise >= 0 && data.sellingPricePaise <= 100000000000 &&
+             data.wholesalePricePaise is int && data.wholesalePricePaise >= 0 && data.wholesalePricePaise <= 100000000000 &&
+             data.wholesaleMinQtyScaled is int && data.wholesaleMinQtyScaled >= 0 && data.wholesaleMinQtyScaled <= 100000000 &&
+             data.mrpPaise is int && data.mrpPaise >= 0 && data.mrpPaise <= 100000000000 &&
+             data.taxRatePercentScaled is int && data.taxRatePercentScaled >= 0 && data.taxRatePercentScaled <= 10000 &&
+             data.isTaxInclusive is bool &&
+             data.unitName is string && data.unitName.size() >= 1 && data.unitName.size() <= 24 &&
+             data.openingStockScaled is int && data.openingStockScaled >= -100000000 && data.openingStockScaled <= 1000000000 &&
+             data.currentStockScaled is int && data.currentStockScaled >= -100000000 && data.currentStockScaled <= 1000000000 &&
+             data.minStockScaled is int && data.minStockScaled >= 0 && data.minStockScaled <= 1000000000 &&
+             data.isServiceItem is bool &&
+             data.isRawMaterial is bool &&
+             data.defaultDiscountPercentScaled is int && data.defaultDiscountPercentScaled >= 0 && data.defaultDiscountPercentScaled <= 10000 &&
+             data.trackExpiry is bool &&
+             data.isActive is bool &&
+             data.localCreatedAt is int && data.localCreatedAt >= 0 &&
+             data.localUpdatedAt is int && data.localUpdatedAt >= 0 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time &&
+             isValidOptionalString(data, 'sku', 64) &&
+             isValidOptionalString(data, 'barcode', 64) &&
+             isValidOptionalString(data, 'productCode', 64) &&
+             isValidOptionalString(data, 'hsnSacCode', 32) &&
+             isValidOptionalString(data, 'categoryName', 80) &&
+             isValidOptionalString(data, 'brand', 80) &&
+             isValidOptionalString(data, 'description', 500) &&
+             isValidOptionalString(data, 'batchNumber', 64) &&
+             isValidOptionalInt(data, 'expiryDateMillis', 0, 9999999999999) &&
+             isValidOptionalString(data, 'garmentSize', 32) &&
+             isValidOptionalString(data, 'garmentColor', 32) &&
+             isValidOptionalString(data, 'garmentStyle', 48) &&
+             isValidOptionalString(data, 'serialNumber', 80) &&
+             isValidOptionalInt(data, 'warrantyMonths', 0, 1200);
+    }
+
+    function isValidSyncedInvoice(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.localId is int && data.localId >= 1 && data.localId <= 100000000 &&
+             data.businessId is int && data.businessId >= 1 && data.businessId <= 100000000 &&
+             data.invoiceNumber is string && data.invoiceNumber.size() >= 1 && data.invoiceNumber.size() <= 64 &&
+             data.documentType is string &&
+             data.documentType in [
+               'TAX_INVOICE', 'NON_GST_INVOICE', 'RETAIL_INVOICE', 'WHOLESALE_INVOICE',
+               'ESTIMATE', 'QUOTATION', 'PROFORMA', 'DELIVERY_CHALLAN',
+               'CREDIT_NOTE', 'DEBIT_NOTE', 'SALES_RETURN'
+             ] &&
+             data.status is string &&
+             data.status in ['DRAFT', 'FINALIZED', 'PARTIAL', 'PAID', 'CANCELLED', 'HELD_POS'] &&
+             data.invoiceDateMillis is int && data.invoiceDateMillis >= 0 &&
+             data.customerName is string && data.customerName.size() >= 1 && data.customerName.size() <= 120 &&
+             data.isInterState is bool &&
+             data.subtotalPaise is int && data.subtotalPaise >= 0 && data.subtotalPaise <= 100000000000 &&
+             data.itemDiscountPaise is int && data.itemDiscountPaise >= 0 && data.itemDiscountPaise <= 100000000000 &&
+             data.invoiceDiscountPercentScaled is int && data.invoiceDiscountPercentScaled >= 0 && data.invoiceDiscountPercentScaled <= 10000 &&
+             data.invoiceDiscountFlatPaise is int && data.invoiceDiscountFlatPaise >= 0 && data.invoiceDiscountFlatPaise <= 100000000000 &&
+             data.taxableAmountPaise is int && data.taxableAmountPaise >= 0 && data.taxableAmountPaise <= 100000000000 &&
+             data.cgstPaise is int && data.cgstPaise >= 0 && data.cgstPaise <= 100000000000 &&
+             data.sgstPaise is int && data.sgstPaise >= 0 && data.sgstPaise <= 100000000000 &&
+             data.igstPaise is int && data.igstPaise >= 0 && data.igstPaise <= 100000000000 &&
+             data.totalTaxPaise is int && data.totalTaxPaise >= 0 && data.totalTaxPaise <= 100000000000 &&
+             data.additionalChargesPaise is int && data.additionalChargesPaise >= 0 && data.additionalChargesPaise <= 100000000000 &&
+             data.shippingChargesPaise is int && data.shippingChargesPaise >= 0 && data.shippingChargesPaise <= 100000000000 &&
+             data.roundOffPaise is int && data.roundOffPaise >= -10000 && data.roundOffPaise <= 10000 &&
+             data.grandTotalPaise is int && data.grandTotalPaise >= 0 && data.grandTotalPaise <= 100000000000 &&
+             data.paidAmountPaise is int && data.paidAmountPaise >= 0 && data.paidAmountPaise <= 100000000000 &&
+             data.balanceDuePaise is int && data.balanceDuePaise >= 0 && data.balanceDuePaise <= 100000000000 &&
+             data.paymentMode is string &&
+             data.paymentMode in ['CASH', 'UPI', 'BANK_TRANSFER', 'CARD', 'CHEQUE', 'OTHER'] &&
+             data.loyaltyPointsEarned is int && data.loyaltyPointsEarned >= 0 && data.loyaltyPointsEarned <= 100000000 &&
+             data.loyaltyPointsRedeemed is int && data.loyaltyPointsRedeemed >= 0 && data.loyaltyPointsRedeemed <= 100000000 &&
+             data.loyaltyDiscountPaise is int && data.loyaltyDiscountPaise >= 0 && data.loyaltyDiscountPaise <= 100000000000 &&
+             data.localCreatedAt is int && data.localCreatedAt >= 0 &&
+             data.localUpdatedAt is int && data.localUpdatedAt >= 0 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time &&
+             isValidOptionalInt(data, 'dueDateMillis', 0, 9999999999999) &&
+             isValidOptionalInt(data, 'customerId', 0, 100000000) &&
+             isValidOptionalInt(data, 'linkedOriginalInvoiceId', 0, 100000000) &&
+             isValidOptionalString(data, 'customerPhone', 32) &&
+             isValidOptionalString(data, 'customerAddress', 300) &&
+             isValidOptionalString(data, 'customerGstin', 24) &&
+             isValidOptionalString(data, 'paymentReference', 120) &&
+             isValidOptionalString(data, 'tableNumber', 32) &&
+             isValidOptionalString(data, 'kotStatus', 32) &&
+             isValidOptionalString(data, 'notes', 500) &&
+             isValidOptionalString(data, 'termsAndConditions', 500);
+    }
+
+    function isValidSyncedInvoiceItem(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.invoiceLocalId is int && data.invoiceLocalId >= 1 && data.invoiceLocalId <= 100000000 &&
+             data.productName is string && data.productName.size() >= 1 && data.productName.size() <= 160 &&
+             data.unitName is string && data.unitName.size() >= 1 && data.unitName.size() <= 24 &&
+             data.quantityScaled is int && data.quantityScaled >= 1 && data.quantityScaled <= 1000000000 &&
+             data.ratePaise is int && data.ratePaise >= 0 && data.ratePaise <= 100000000000 &&
+             data.purchaseCostPaise is int && data.purchaseCostPaise >= 0 && data.purchaseCostPaise <= 100000000000 &&
+             data.discountPercentScaled is int && data.discountPercentScaled >= 0 && data.discountPercentScaled <= 10000 &&
+             data.discountAmountPaise is int && data.discountAmountPaise >= 0 && data.discountAmountPaise <= 100000000000 &&
+             data.taxRatePercentScaled is int && data.taxRatePercentScaled >= 0 && data.taxRatePercentScaled <= 10000 &&
+             data.isTaxInclusive is bool &&
+             data.taxableAmountPaise is int && data.taxableAmountPaise >= 0 && data.taxableAmountPaise <= 100000000000 &&
+             data.cgstPaise is int && data.cgstPaise >= 0 && data.cgstPaise <= 100000000000 &&
+             data.sgstPaise is int && data.sgstPaise >= 0 && data.sgstPaise <= 100000000000 &&
+             data.igstPaise is int && data.igstPaise >= 0 && data.igstPaise <= 100000000000 &&
+             data.lineTotalPaise is int && data.lineTotalPaise >= 0 && data.lineTotalPaise <= 100000000000 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time &&
+             isValidOptionalInt(data, 'productId', 0, 100000000) &&
+             isValidOptionalInt(data, 'batchId', 0, 100000000) &&
+             isValidOptionalInt(data, 'expiryDateMillis', 0, 9999999999999) &&
+             isValidOptionalString(data, 'productCode', 64) &&
+             isValidOptionalString(data, 'hsnSacCode', 32) &&
+             isValidOptionalString(data, 'batchNumber', 64) &&
+             isValidOptionalString(data, 'serialNumber', 80);
+    }
+
+    match /users/{userId} {
+      allow get, list: if isSignedIn() && request.auth.uid == userId;
+
+      allow create: if isSignedIn() &&
+                       request.auth.uid == userId &&
+                       isValidId(userId) &&
+                       resource == null &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().keys().hasAll(['userId', 'email', 'shopName', 'address', 'phone', 'createdAt']) &&
+                       incoming().keys().hasOnly(['userId', 'email', 'shopName', 'address', 'phone', 'createdAt', 'updatedAt']) &&
+                       isValidUserProfile(incoming());
+
+      allow update: if isSignedIn() &&
+                       request.auth.uid == userId &&
+                       isValidId(userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidUserProfile(incoming()) &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['email', 'shopName', 'address', 'phone', 'updatedAt']);
+
+      allow delete: if isSignedIn() && request.auth.uid == userId && isValidId(userId);
+
+      match /businesses/{businessDocId} {
+        allow list: if isSignedIn() && request.auth.uid == userId;
+        allow get, delete: if isSignedIn() && request.auth.uid == userId && isValidId(businessDocId);
+
+        allow create: if isSignedIn() &&
+                         request.auth.uid == userId &&
+                         isValidId(businessDocId) &&
+                         resource == null &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll([
+                           'userId', 'localId', 'businessName', 'category', 'isGstRegistered',
+                           'currencySymbol', 'invoicePrefix', 'nextInvoiceNumber',
+                           'localUpdatedAt', 'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'localId', 'businessName', 'ownerName', 'tagline',
+                           'phone', 'email', 'website', 'address', 'city', 'state', 'pinCode',
+                           'category', 'isGstRegistered', 'gstin', 'financialYear',
+                           'currencySymbol', 'invoicePrefix', 'nextInvoiceNumber', 'upiId',
+                           'signatureLabel', 'defaultTerms', 'localUpdatedAt', 'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidSyncedBusiness(incoming());
+
+        allow update: if isSignedIn() &&
+                         request.auth.uid == userId &&
+                         isValidId(businessDocId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().localId == existing().localId &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidSyncedBusiness(incoming()) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'businessName', 'ownerName', 'tagline', 'phone', 'email', 'website',
+                           'address', 'city', 'state', 'pinCode', 'category', 'isGstRegistered',
+                           'gstin', 'financialYear', 'currencySymbol', 'invoicePrefix',
+                           'nextInvoiceNumber', 'upiId', 'signatureLabel', 'defaultTerms',
+                           'localUpdatedAt', 'updatedAt'
+                         ]);
+      }
+
+      match /products/{productDocId} {
+        allow list: if isSignedIn() && request.auth.uid == userId;
+        allow get, delete: if isSignedIn() && request.auth.uid == userId && isValidId(productDocId);
+
+        allow create: if isSignedIn() &&
+                         request.auth.uid == userId &&
+                         isValidId(productDocId) &&
+                         resource == null &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll([
+                           'userId', 'localId', 'businessId', 'name',
+                           'purchasePricePaise', 'sellingPricePaise', 'wholesalePricePaise',
+                           'wholesaleMinQtyScaled', 'mrpPaise', 'taxRatePercentScaled',
+                           'isTaxInclusive', 'unitName', 'openingStockScaled',
+                           'currentStockScaled', 'minStockScaled', 'isServiceItem',
+                           'isRawMaterial', 'defaultDiscountPercentScaled', 'trackExpiry',
+                           'isActive', 'localCreatedAt', 'localUpdatedAt', 'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'localId', 'businessId', 'name', 'sku', 'barcode',
+                           'productCode', 'hsnSacCode', 'categoryName', 'brand', 'description',
+                           'purchasePricePaise', 'sellingPricePaise', 'wholesalePricePaise',
+                           'wholesaleMinQtyScaled', 'mrpPaise', 'taxRatePercentScaled',
+                           'isTaxInclusive', 'unitName', 'openingStockScaled',
+                           'currentStockScaled', 'minStockScaled', 'batchNumber',
+                           'expiryDateMillis', 'garmentSize', 'garmentColor', 'garmentStyle',
+                           'serialNumber', 'warrantyMonths', 'isServiceItem', 'isRawMaterial',
+                           'defaultDiscountPercentScaled', 'trackExpiry', 'isActive',
+                           'localCreatedAt', 'localUpdatedAt', 'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidSyncedProduct(incoming());
+
+        allow update: if isSignedIn() &&
+                         request.auth.uid == userId &&
+                         isValidId(productDocId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().localId == existing().localId &&
+                         incoming().businessId == existing().businessId &&
+                         incoming().localCreatedAt == existing().localCreatedAt &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidSyncedProduct(incoming()) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'name', 'sku', 'barcode', 'productCode', 'hsnSacCode',
+                           'categoryName', 'brand', 'description', 'purchasePricePaise',
+                           'sellingPricePaise', 'wholesalePricePaise', 'wholesaleMinQtyScaled',
+                           'mrpPaise', 'taxRatePercentScaled', 'isTaxInclusive', 'unitName',
+                           'openingStockScaled', 'currentStockScaled', 'minStockScaled',
+                           'batchNumber', 'expiryDateMillis', 'garmentSize', 'garmentColor',
+                           'garmentStyle', 'serialNumber', 'warrantyMonths', 'isServiceItem',
+                           'isRawMaterial', 'defaultDiscountPercentScaled', 'trackExpiry',
+                           'isActive', 'localUpdatedAt', 'updatedAt'
+                         ]);
+      }
+
+      match /invoices/{invoiceDocId} {
+        allow list: if isSignedIn() && request.auth.uid == userId;
+        allow get, delete: if isSignedIn() && request.auth.uid == userId && isValidId(invoiceDocId);
+
+        allow create: if isSignedIn() &&
+                         request.auth.uid == userId &&
+                         isValidId(invoiceDocId) &&
+                         resource == null &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll([
+                           'userId', 'localId', 'businessId', 'invoiceNumber',
+                           'documentType', 'status', 'invoiceDateMillis', 'customerName',
+                           'isInterState', 'subtotalPaise', 'itemDiscountPaise',
+                           'invoiceDiscountPercentScaled', 'invoiceDiscountFlatPaise',
+                           'taxableAmountPaise', 'cgstPaise', 'sgstPaise', 'igstPaise',
+                           'totalTaxPaise', 'additionalChargesPaise', 'shippingChargesPaise',
+                           'roundOffPaise', 'grandTotalPaise', 'paidAmountPaise',
+                           'balanceDuePaise', 'paymentMode', 'loyaltyPointsEarned',
+                           'loyaltyPointsRedeemed', 'loyaltyDiscountPaise',
+                           'localCreatedAt', 'localUpdatedAt', 'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'localId', 'businessId', 'invoiceNumber',
+                           'documentType', 'status', 'invoiceDateMillis', 'dueDateMillis',
+                           'customerId', 'customerName', 'customerPhone', 'customerAddress',
+                           'customerGstin', 'isInterState', 'subtotalPaise', 'itemDiscountPaise',
+                           'invoiceDiscountPercentScaled', 'invoiceDiscountFlatPaise',
+                           'taxableAmountPaise', 'cgstPaise', 'sgstPaise', 'igstPaise',
+                           'totalTaxPaise', 'additionalChargesPaise', 'shippingChargesPaise',
+                           'roundOffPaise', 'grandTotalPaise', 'paidAmountPaise',
+                           'balanceDuePaise', 'paymentMode', 'paymentReference',
+                           'loyaltyPointsEarned', 'loyaltyPointsRedeemed', 'loyaltyDiscountPaise',
+                           'tableNumber', 'kotStatus', 'linkedOriginalInvoiceId',
+                           'notes', 'termsAndConditions',
+                           'localCreatedAt', 'localUpdatedAt', 'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidSyncedInvoice(incoming());
+
+        allow update: if isSignedIn() &&
+                         request.auth.uid == userId &&
+                         isValidId(invoiceDocId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().localId == existing().localId &&
+                         incoming().businessId == existing().businessId &&
+                         incoming().localCreatedAt == existing().localCreatedAt &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidSyncedInvoice(incoming()) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'invoiceNumber', 'documentType', 'status', 'invoiceDateMillis',
+                           'dueDateMillis', 'customerId', 'customerName', 'customerPhone',
+                           'customerAddress', 'customerGstin', 'isInterState', 'subtotalPaise',
+                           'itemDiscountPaise', 'invoiceDiscountPercentScaled',
+                           'invoiceDiscountFlatPaise', 'taxableAmountPaise', 'cgstPaise',
+                           'sgstPaise', 'igstPaise', 'totalTaxPaise', 'additionalChargesPaise',
+                           'shippingChargesPaise', 'roundOffPaise', 'grandTotalPaise',
+                           'paidAmountPaise', 'balanceDuePaise', 'paymentMode',
+                           'paymentReference', 'loyaltyPointsEarned', 'loyaltyPointsRedeemed',
+                           'loyaltyDiscountPaise', 'tableNumber', 'kotStatus',
+                           'linkedOriginalInvoiceId', 'notes', 'termsAndConditions',
+                           'localUpdatedAt', 'updatedAt'
+                         ]);
+
+        match /items/{itemDocId} {
+          allow list: if isSignedIn() && request.auth.uid == userId;
+          allow get, delete: if isSignedIn() && request.auth.uid == userId && isValidId(invoiceDocId) && isValidId(itemDocId);
+
+          allow create: if isSignedIn() &&
+                           request.auth.uid == userId &&
+                           isValidId(invoiceDocId) &&
+                           isValidId(itemDocId) &&
+                           resource == null &&
+                           incoming().userId == request.auth.uid &&
+                           incoming().keys().hasAll([
+                             'userId', 'invoiceLocalId', 'productName', 'unitName',
+                             'quantityScaled', 'ratePaise', 'purchaseCostPaise',
+                             'discountPercentScaled', 'discountAmountPaise',
+                             'taxRatePercentScaled', 'isTaxInclusive',
+                             'taxableAmountPaise', 'cgstPaise', 'sgstPaise', 'igstPaise',
+                             'lineTotalPaise', 'createdAt', 'updatedAt'
+                           ]) &&
+                           incoming().keys().hasOnly([
+                             'userId', 'invoiceLocalId', 'productId', 'batchId',
+                             'productName', 'productCode', 'hsnSacCode', 'unitName',
+                             'quantityScaled', 'ratePaise', 'purchaseCostPaise',
+                             'discountPercentScaled', 'discountAmountPaise',
+                             'taxRatePercentScaled', 'isTaxInclusive',
+                             'taxableAmountPaise', 'cgstPaise', 'sgstPaise', 'igstPaise',
+                             'lineTotalPaise', 'batchNumber', 'expiryDateMillis',
+                             'serialNumber', 'createdAt', 'updatedAt'
+                           ]) &&
+                           isValidSyncedInvoiceItem(incoming());
+
+          allow update: if isSignedIn() &&
+                           request.auth.uid == userId &&
+                           isValidId(invoiceDocId) &&
+                           isValidId(itemDocId) &&
+                           incoming().userId == existing().userId &&
+                           incoming().invoiceLocalId == existing().invoiceLocalId &&
+                           incoming().createdAt == existing().createdAt &&
+                           isValidSyncedInvoiceItem(incoming()) &&
+                           incoming().diff(existing()).affectedKeys().hasOnly([
+                             'productId', 'batchId', 'productName', 'productCode',
+                             'hsnSacCode', 'unitName', 'quantityScaled', 'ratePaise',
+                             'purchaseCostPaise', 'discountPercentScaled', 'discountAmountPaise',
+                             'taxRatePercentScaled', 'isTaxInclusive', 'taxableAmountPaise',
+                             'cgstPaise', 'sgstPaise', 'igstPaise', 'lineTotalPaise',
+                             'batchNumber', 'expiryDateMillis', 'serialNumber', 'updatedAt'
+                           ]);
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">HisabPulse</string>
+    <string name="brand_tagline">Offline Business, Billing &amp; Accounting</string>
+    <string name="nav_home">Home</string>
+    <string name="nav_billing">Billing</string>
+    <string name="nav_items">Items</string>
+    <string name="nav_parties">Parties</string>
+    <string name="nav_more">More</string>
+    <string name="gst_disclaimer">Generated GST summaries are for business review and preparation. Verify figures against statutory requirements before filing on any official GST portal.</string>
+</resources>
